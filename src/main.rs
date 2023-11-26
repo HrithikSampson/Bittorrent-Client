@@ -12,7 +12,6 @@ use serde_bencode::value::Value;
 #[allow(dead_code)]
 fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
     // If encoded_value starts with a digit, it's a number
-    println!("encode inside func:{}",encoded_value);
     let decode: serde_bencode::value::Value = serde_bencode::from_str::<Value>(&encoded_value).unwrap_or_else(|error|{
         panic!("Error decoding value to bencode:{}",error);
     });
@@ -33,7 +32,7 @@ fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
         }),
     };
     decoded_value
-} 
+}
 
 // fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
 //     // If encoded_value starts with a digit, it's a number
