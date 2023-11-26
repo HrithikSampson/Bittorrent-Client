@@ -23,7 +23,7 @@ fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
                 panic!("Error decoding value to bencode:{}",error);
             }))).collect()},
         serde_bencode::value::Value::Dict(dict) => {serde_json::value::Value::Object(dict.into_iter()
-            .map(|(key,value)| (decode_bencoded_value(&serde_bencode::to_string(&String::from_utf8_lossy(&key).into_owned()).unwrap()).to_string(),
+            .map(|(key,value)| (String::from_utf8_lossy(&key).into_owned(),
             decode_bencoded_value(&serde_bencode::to_string(&value).unwrap())))
             .collect())},
         _ => serde_json::to_value(&decode).unwrap_or_else(|error|{
