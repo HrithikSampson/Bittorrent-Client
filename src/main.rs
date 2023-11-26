@@ -16,11 +16,15 @@ fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
     });
     let decoded_value:serde_json::Value= match decode {
         serde_bencode::value::Value::Bytes(bytes) => {serde_json::value::Value::String(String::from_utf8_lossy(&bytes).into_owned())},
+        serde_bencode::value::Value::List(list) => {list.into_iter()
+            .map(|element|  decode_bencoded_value(&serde_bencode::to_string::<Value>(&element)
+            .unwrap_or_else(|error|{
+                panic!("Error decoding value to bencode:{}",error);
+            }))).collect()}
         _ => serde_json::to_value(&decode).unwrap_or_else(|error|{
             panic!("Error converting bencode to value format:{}",error);
         }),
     };
-    
     decoded_value
 }
 
