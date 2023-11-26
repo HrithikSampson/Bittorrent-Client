@@ -3,24 +3,29 @@ use serde_json;
 use std::env;
 use serde_bencode;
 use serde_bencode::value::Value;
-
+use serde_json::json;
 // Available if you need it!
 // use serde_bencode
 
 #[allow(dead_code)]
 fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
     // If encoded_value starts with a digit, it's a number
-
+    //println!("{}",encoded_value);
     let decode: serde_bencode::value::Value = serde_bencode::from_str::<Value>(&encoded_value).unwrap_or_else(|error|{
         panic!("Error decoding value to bencode:{}",error);
     });
+    //println!("{:?}",decode);
     let decoded_value:serde_json::Value= match decode {
         serde_bencode::value::Value::Bytes(bytes) => {serde_json::value::Value::String(String::from_utf8_lossy(&bytes).into_owned())},
         serde_bencode::value::Value::List(list) => {list.into_iter()
             .map(|element|  decode_bencoded_value(&serde_bencode::to_string::<Value>(&element)
             .unwrap_or_else(|error|{
                 panic!("Error decoding value to bencode:{}",error);
-            }))).collect()}
+            }))).collect()},
+        serde_bencode::value::Value::Dict(dict) => {serde_json::value::Value::Object(dict.into_iter()
+            .map(|(key,value)| (decode_bencoded_value(&serde_bencode::to_string(&String::from_utf8_lossy(&key).into_owned()).unwrap()).to_string(),
+            decode_bencoded_value(&serde_bencode::to_string(&value).unwrap())))
+            .collect())},
         _ => serde_json::to_value(&decode).unwrap_or_else(|error|{
             panic!("Error converting bencode to value format:{}",error);
         }),
