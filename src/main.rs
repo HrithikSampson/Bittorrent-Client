@@ -2,6 +2,7 @@
 use serde_json;
 use std::env;
 use serde_bencode;
+use serde_bencode::value::Value;
 
 // Available if you need it!
 // use serde_bencode
@@ -9,12 +10,17 @@ use serde_bencode;
 #[allow(dead_code)]
 fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
     // If encoded_value starts with a digit, it's a number
-    println!("{}",encoded_value.to_string());
-    let decoded_value: serde_json::Value = serde_json::to_value(serde_bencode::from_str(&encoded_value).unwrap_or_else(|error|{
-        panic!("Error encoding value to beencode:{}",error);
-    })).unwrap_or_else(|error|{
-        panic!("Error converting bencode to value format:{}",error);
+
+    let decode: serde_bencode::value::Value = serde_bencode::from_str::<Value>(&encoded_value).unwrap_or_else(|error|{
+        panic!("Error decoding value to bencode:{}",error);
     });
+    let decoded_value:serde_json::Value= match decode {
+        serde_bencode::value::Value::Bytes(bytes) => {serde_json::value::Value::String(String::from_utf8_lossy(&bytes).into_owned())},
+        _ => serde_json::to_value(&decode).unwrap_or_else(|error|{
+            panic!("Error converting bencode to value format:{}",error);
+        }),
+    };
+    
     decoded_value
 }
 
