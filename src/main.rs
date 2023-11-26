@@ -80,7 +80,7 @@ fn main() {
         let contents = fs::read(file_path)
         .expect("Should have been able to read the file");
         let content_torrent:TorrentFile = serde_bencode::from_bytes(&contents).unwrap();
-        println!("Tracker URL: {:?}", &content_torrent.announce);
+        println!("Tracker URL: {:?}", &content_torrent.announce.as_str());
         println!("Length: {:?}", &content_torrent.info.length);
     } else {
         println!("unknown command: {}", args[1])
