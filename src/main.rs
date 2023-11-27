@@ -1,7 +1,8 @@
 
+//use anyhow::Context;
 use serde::Deserialize;
 use serde::Serialize;
-use serde::ser::SerializeSeq;
+//use serde::ser::SerializeSeq;
 use serde_json;
 //use serde_json::json;
 use std::env;
@@ -63,13 +64,8 @@ impl Serialize for Hashes
     where
         S: Serializer,
     {
-         let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-        for x in &self.0 {
-            
-            seq.serialize_element(&x)?;
-            
-        }
-        seq.end()
+         
+        serializer.serialize_bytes(&self.0.concat())
     }
 }
 impl<'de> Visitor<'de> for HashesVisitor {
@@ -99,12 +95,12 @@ impl<'de> Deserialize<'de> for Hashes {
         deserializer.deserialize_bytes(HashesVisitor)
     }
 }
-fn encode_hex(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .map(|byte| format!("{:02x}", byte))
-        .collect()
-}
+// fn encode_hex(bytes: &[u8]) -> String {
+//     bytes
+//         .iter()
+//         .map(|byte| format!("{:02x}", byte))
+//         .collect()
+// }
 fn main() {
     let args: Vec<String> = env::args().collect();
     let command = &args[1];
@@ -124,7 +120,9 @@ fn main() {
         println!("Length: {}", &content_torrent.info.length);
         let bencoded_info = serde_bencode::to_bytes(&content_torrent.info).unwrap();//serde_bencode::to_string(&{..content_torrent.info}).unwrap();
         //println!("{:?}",bencoded_info);
+        // let decoded_info = decode_bencoded_value(bencoded_info.as_str());
         //let decoded_info = decode_bencoded_value(bencoded_info.as_str());
+        //println!("{:?}",content_torrent.info);
         //println!("{:?}",decoded_info);
         let mut hasher = Sha1::new();
         // let decode = match decoded_info{
@@ -137,7 +135,7 @@ fn main() {
         
         hasher.update(&bencoded_info);
         let hash = hasher.finalize(); 
-        println!("Info Hash: {}",&encode_hex(&hash));
+        println!("Info Hash: {}",hex::encode(&hash));
     } else {
         println!("unknown command: {}", args[1])
     }
