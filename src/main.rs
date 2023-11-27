@@ -3,6 +3,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde::ser::SerializeSeq;
 use serde_json;
+//use serde_json::json;
 use std::env;
 use std::fs;
 use serde_bencode;
@@ -62,9 +63,11 @@ impl Serialize for Hashes
     where
         S: Serializer,
     {
-        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+         let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
         for x in &self.0 {
+            
             seq.serialize_element(&x)?;
+            
         }
         seq.end()
     }
@@ -124,6 +127,14 @@ fn main() {
         //let decoded_info = decode_bencoded_value(bencoded_info.as_str());
         //println!("{:?}",decoded_info);
         let mut hasher = Sha1::new();
+        // let decode = match decoded_info{
+        //     serde_json::value::Value::Object(s)=>json!(s),
+        //     _ => json!([])
+        // };
+
+        //let decode = serde_json::to_string(&decoded_info).unwrap();
+        //println!("{:?}",decode);
+        
         hasher.update(bencoded_info);
         let hash = hasher.finalize(); 
         println!("Info Hash: {}",encode_hex(&hash));
