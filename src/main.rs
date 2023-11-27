@@ -1,11 +1,14 @@
 
 use serde::Deserialize;
 use serde::Serialize;
+use serde::ser::SerializeSeq;
 use serde_json;
 use std::env;
 use std::fs;
 use serde_bencode;
 use serde_bencode::value::Value;
+use serde::{Serializer,de::Visitor, Deserializer};
+use sha1::{Digest, Sha1};
 // Available if you need it!
 // use serde_bencode
 
@@ -33,44 +36,77 @@ fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
     };
     decoded_value
 }
-
-// fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
-//     // If encoded_value starts with a digit, it's a number
-//     if encoded_value.chars().next().unwrap().is_digit(10) {
-//         // Example: "5:hello" -> "hello"
-//         let colon_index = encoded_value.find(':').unwrap();
-//         let number_string = &encoded_value[..colon_index];
-//         let number = number_string.parse::<i64>().unwrap();
-//         let string = &encoded_value[colon_index + 1..colon_index + 1 + number as usize];
-//         return serde_json::Value::String(string.to_string());
-//     } else {
-//         panic!("Unhandled encoded value: {}", encoded_value)
-//     }
-// }
-// Usage: your_bittorrent.sh decode "<encoded_value>"
+#[derive(Debug,PartialEq, Eq)]
+struct Hashes(Vec<[u8; 20]>);
 #[derive(Serialize,Deserialize,Debug,PartialEq, Eq)]
 struct Info{
     length: usize,
-    // name: String,
-    // #[serde(rename="piece length")]
-    // piece_length: usize,
-    // pieces: usize,
+    name: String,
+    #[serde(rename="piece length")]
+    piece_length: usize,
+    pieces: Hashes,
 }
+
+
 #[derive(Serialize,Deserialize,Debug,PartialEq, Eq)]
 struct TorrentFile{
     announce: String,
     info: Info
 
 }
+#[derive(Debug)]
+struct HashesVisitor;
+impl Serialize for Hashes
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+        for x in &self.0 {
+            seq.serialize_element(&x)?;
+        }
+        seq.end()
+    }
+}
+impl<'de> Visitor<'de> for HashesVisitor {
+    type Value = Hashes;
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        println!("{:?}",self);
+        formatter.write_str("a byte string whose length is multiple of 20")
+    }
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        // println!("{:?}",v);
+        Ok(Hashes(
+            v.chunks_exact(20)
+            .map(|chunk| chunk.try_into().expect("guaranteed to be length 20"))
+            .collect(),
+        ))
+         
+    } 
+}
+impl<'de> Deserialize<'de> for Hashes {
+    fn deserialize<D>(deserializer: D) -> Result<Hashes, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(HashesVisitor)
+    }
+}
+fn encode_hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect()
+}
 fn main() {
     let args: Vec<String> = env::args().collect();
     let command = &args[1];
 
     if command == "decode" {
-        // You can use print statements as follows for debugging, they'll be visible when running tests.
-        //println!("Logs from your program will appear here!");
-
-        // Uncomment this block to pass the first stage
         let encoded_value = &args[2];
         let decoded_value = decode_bencoded_value(encoded_value);
         println!("{}", decoded_value.to_string());
@@ -80,8 +116,17 @@ fn main() {
         let contents = fs::read(file_path)
         .expect("Should have been able to read the file");
         let content_torrent:TorrentFile = serde_bencode::from_bytes(&contents).unwrap();
-        println!("Tracker URL: {}", &content_torrent.announce.as_str());
-        println!("Length: {}", &content_torrent.info.length);
+        // println!("{:?}",content_torrent.info);
+        // println!("Tracker URL: {}", &content_torrent.announce.as_str());
+        // println!("Length: {}", &content_torrent.info.length);
+        let bencoded_info = serde_bencode::to_string(&Info{..content_torrent.info}).unwrap();
+        //println!("{:?}",bencoded_info);
+        let decoded_info = decode_bencoded_value(bencoded_info.as_str());
+        //println!("{:?}",decoded_info);
+        let mut hasher = Sha1::new();
+        hasher.update(bencoded_info);
+        let hash = hasher.finalize(); 
+        println!("Info Hash: {}",encode_hex(&hash));
     } else {
         println!("unknown command: {}", args[1])
     }
