@@ -122,7 +122,7 @@ fn main() {
         // println!("{:?}",content_torrent.info);
         println!("Tracker URL: {}", &content_torrent.announce.as_str());
         println!("Length: {}", &content_torrent.info.length);
-        let bencoded_info = serde_bencode::to_string(&Info{..content_torrent.info}).unwrap();
+        let bencoded_info = serde_bencode::to_bytes(&content_torrent.info).unwrap();//serde_bencode::to_string(&{..content_torrent.info}).unwrap();
         //println!("{:?}",bencoded_info);
         //let decoded_info = decode_bencoded_value(bencoded_info.as_str());
         //println!("{:?}",decoded_info);
@@ -135,7 +135,7 @@ fn main() {
         //let decode = serde_json::to_string(&decoded_info).unwrap();
         //println!("{:?}",decode);
         
-        hasher.update(bencoded_info);
+        hasher.update(&bencoded_info);
         let hash = hasher.finalize(); 
         println!("Info Hash: {}",&encode_hex(&hash));
     } else {
