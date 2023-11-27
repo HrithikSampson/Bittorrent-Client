@@ -117,11 +117,11 @@ fn main() {
         .expect("Should have been able to read the file");
         let content_torrent:TorrentFile = serde_bencode::from_bytes(&contents).unwrap();
         // println!("{:?}",content_torrent.info);
-        // println!("Tracker URL: {}", &content_torrent.announce.as_str());
-        // println!("Length: {}", &content_torrent.info.length);
+        println!("Tracker URL: {}", &content_torrent.announce.as_str());
+        println!("Length: {}", &content_torrent.info.length);
         let bencoded_info = serde_bencode::to_string(&Info{..content_torrent.info}).unwrap();
         //println!("{:?}",bencoded_info);
-        let decoded_info = decode_bencoded_value(bencoded_info.as_str());
+        //let decoded_info = decode_bencoded_value(bencoded_info.as_str());
         //println!("{:?}",decoded_info);
         let mut hasher = Sha1::new();
         hasher.update(bencoded_info);
