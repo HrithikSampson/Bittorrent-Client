@@ -137,7 +137,7 @@ fn main() {
         
         hasher.update(bencoded_info);
         let hash = hasher.finalize(); 
-        println!("Info Hash: {}",encode_hex(&hash));
+        println!("Info Hash: {}",&encode_hex(&hash));
     } else {
         println!("unknown command: {}", args[1])
     }
