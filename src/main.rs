@@ -136,6 +136,11 @@ fn main() {
         hasher.update(&bencoded_info);
         let hash = hasher.finalize(); 
         println!("Info Hash: {}",hex::encode(&hash));
+        println!("Piece Length: {}",content_torrent.info.piece_length);
+        println!("Piece Hashes:");
+        for hash in &content_torrent.info.pieces.0{
+            println!("{}",hex::encode(hash));
+        }
     } else {
         println!("unknown command: {}", args[1])
     }
